@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard — ChitoShell</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy: #0d1f3c; --navy-mid: #16305a; --navy-light: #1e3f6f;
+    --gold: #f5c400; --gold-dark: #c9a000;
+    --white: #f5f5f0; --text: #c8d0df;
+    --green: #4caf50; --red: #e53935; --blue: #2196f3; --orange: #ff9800;
+    --sidebar-w: 240px;
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Barlow',sans-serif; background:#0a1628; color:var(--white); display:flex; min-height:100vh; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--navy);
+    border-right: 1px solid rgba(245,196,0,.12);
+    display: flex; flex-direction: column;
+    position: fixed; top:0; left:0; bottom:0; z-index:100;
+  }
+  .sb-logo {
+    padding: 1.4rem 1.2rem;
+    border-bottom: 1px solid rgba(245,196,0,.12);
+  }
+  .sb-logo h2 { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--gold); }
+  .sb-logo p  { font-size:.72rem; color:var(--text); letter-spacing:.05em; margin-top:2px; }
+
+  .sb-nav { flex:1; padding:.8rem 0; }
+  .sb-item {
+    display: flex; align-items: center; gap:.8rem;
+    padding: .7rem 1.2rem; cursor: pointer;
+    color: var(--text); font-family:'Barlow Condensed',sans-serif;
+    font-size:.95rem; letter-spacing:.04em;
+    border-left: 3px solid transparent;
+    transition: background .15s, color .15s, border-color .15s;
+    text-decoration: none;
+  }
+  .sb-item:hover  { background: rgba(255,255,255,.04); color:var(--white); }
+  .sb-item.active { background: rgba(245,196,0,.07); color:var(--gold); border-left-color:var(--gold); }
+  .sb-item .icon  { font-size:1.1rem; width:22px; text-align:center; }
+
+  .sb-footer {
+    padding: 1rem 1.2rem;
+    border-top: 1px solid rgba(245,196,0,.1);
+    font-size:.78rem; color:var(--text);
+  }
+  #admin-name { color:var(--gold); font-weight:600; }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1; display: flex; flex-direction: column;
+  }
+
+  /* top bar */
+  #topbar {
+    background: var(--navy);
+    border-bottom: 1px solid rgba(245,196,0,.1);
+    padding: .9rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #topbar h1 { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--white); }
+  #topbar .meta { font-size:.82rem; color:var(--text); }
+
+  /* pages */
+  .page { display:none; padding:2rem; }
+  .page.active { display:block; }
+
+  /* ── STAT CARDS ── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap:1.2rem; margin-bottom:2rem;
+  }
+  .stat-card {
+    background: var(--navy); border:1px solid rgba(245,196,0,.12);
+    padding:1.3rem 1.4rem; border-top:3px solid var(--gold);
+    position:relative; overflow:hidden;
+  }
+  .stat-card .s-val {
+    font-family:'Bebas Neue',sans-serif; font-size:2.4rem;
+    color:var(--gold); line-height:1;
+  }
+  .stat-card .s-lbl {
+    font-size:.78rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text); margin-top:.3rem;
+  }
+  .stat-card .s-icon {
+    position:absolute; right:1rem; top:50%; transform:translateY(-50%);
+    font-size:2.5rem; opacity:.12;
+  }
+  .stat-card.green { border-top-color:var(--green); }
+  .stat-card.green .s-val { color:var(--green); }
+  .stat-card.red   { border-top-color:var(--red); }
+  .stat-card.red   .s-val { color:var(--red); }
+  .stat-card.blue  { border-top-color:var(--blue); }
+  .stat-card.blue  .s-val { color:var(--blue); }
+
+  /* ── TABLES ── */
+  .card {
+    background:var(--navy); border:1px solid rgba(245,196,0,.1);
+    margin-bottom:1.5rem;
+  }
+  .card-header {
+    padding:.9rem 1.3rem; border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-header h3 {
+    font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    font-size:1rem; letter-spacing:.06em; color:var(--white);
+  }
+  .card-body { padding:0; overflow-x:auto; }
+
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th {
+    background:rgba(245,196,0,.06); color:var(--gold);
+    font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    font-size:.78rem; letter-spacing:.1em; text-transform:uppercase;
+    padding:.7rem 1rem; text-align:left;
+  }
+  td { padding:.75rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--text); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+
+  /* badges */
+  .badge {
+    display:inline-block; padding:.2rem .65rem; border-radius:20px;
+    font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  }
+  .badge-pending   { background:rgba(255,152,0,.15);  color:var(--orange); }
+  .badge-confirmed { background:rgba(76,175,80,.15);  color:var(--green); }
+  .badge-shipped   { background:rgba(33,150,243,.15); color:var(--blue); }
+  .badge-delivered { background:rgba(76,175,80,.2);   color:#81c784; }
+  .badge-cancelled { background:rgba(229,57,53,.15);  color:var(--red); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    font-size:.8rem; letter-spacing:.08em; text-transform:uppercase;
+    padding:.4rem .9rem; border:none; cursor:pointer; border-radius:2px;
+    transition:opacity .15s;
+  }
+  .btn:hover { opacity:.85; }
+  .btn-gold    { background:var(--gold); color:var(--navy); }
+  .btn-outline { background:transparent; border:1px solid rgba(245,196,0,.3); color:var(--gold); }
+  .btn-green   { background:var(--green); color:#fff; }
+  .btn-red     { background:var(--red); color:#fff; }
+  .btn-blue    { background:var(--blue); color:#fff; }
+  .btn-sm      { font-size:.72rem; padding:.3rem .7rem; }
+
+  /* ── FILTERS ── */
+  .filter-bar {
+    display:flex; gap:.8rem; align-items:center; flex-wrap:wrap;
+    margin-bottom:1.2rem;
+  }
+  .filter-bar select, .filter-bar input {
+    background:var(--navy); border:1px solid rgba(245,196,0,.2);
+    color:var(--white); padding:.45rem .8rem; font-family:'Barlow',sans-serif;
+    font-size:.85rem; border-radius:2px; outline:none;
+  }
+  .filter-bar select:focus, .filter-bar input:focus { border-color:var(--gold); }
+
+  /* ── STATUS SELECTOR ── */
+  .status-select {
+    background:var(--navy-mid); border:1px solid rgba(245,196,0,.2);
+    color:var(--white); font-size:.8rem; padding:.3rem .5rem;
+    border-radius:2px; cursor:pointer;
+  }
+
+  /* ── MODAL ── */
+  #modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.65);
+    z-index:500; display:none; align-items:center; justify-content:center;
+  }
+  #modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--navy); border:1px solid rgba(245,196,0,.2);
+    padding:2rem; width:520px; max-width:95vw; max-height:90vh; overflow-y:auto;
+  }
+  .modal h3 {
+    font-family:'Bebas Neue',sans-serif; font-size:1.6rem; margin-bottom:1.2rem;
+  }
+  .modal-row { display:flex; gap:.6rem; justify-content:flex-end; margin-top:1.2rem; }
+  .detail-row { display:flex; padding:.5rem 0; border-bottom:1px solid rgba(255,255,255,.05); }
+  .detail-row .lbl { width:130px; color:var(--text); font-size:.85rem; }
+  .detail-row .val { flex:1; font-size:.85rem; color:var(--white); }
+
+  /* ── FORM ── */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .form-group { display:flex; flex-direction:column; gap:.35rem; }
+  .form-group.full { grid-column:1/-1; }
+  label { font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text); }
+  input, select, textarea {
+    background:rgba(255,255,255,.05); border:1px solid rgba(245,196,0,.2);
+    color:var(--white); padding:.6rem .8rem; font-family:'Barlow',sans-serif;
+    font-size:.88rem; border-radius:2px; outline:none;
+  }
+  input:focus, select:focus, textarea:focus { border-color:var(--gold); }
+  textarea { resize:vertical; min-height:70px; }
+
+  /* ── LOADING ── */
+  .loading { text-align:center; padding:3rem; color:var(--text); font-size:.9rem; }
+  .empty   { text-align:center; padding:2.5rem; color:var(--text); font-size:.88rem; }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:1.5rem; right:1.5rem; z-index:999;
+    padding:.7rem 1.3rem; border-radius:3px; font-size:.88rem;
+    font-family:'Barlow Condensed',sans-serif; letter-spacing:.05em;
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity .25s, transform .25s;
+  }
+  #toast.show { opacity:1; transform:translateY(0); }
+  #toast.success { background:#1b4d1b; border:1px solid var(--green); color:#81c784; }
+  #toast.error   { background:#4d1b1b; border:1px solid var(--red);   color:#ef9a9a; }
+
+  /* unread dot */
+  .dot { width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;margin-left:.3rem;vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <h2>ChitoShell</h2>
+    <p>Enactus New Beni Suef — Admin</p>
+  </div>
+  <nav class="sb-nav">
+    <a class="sb-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </a>
+    <a class="sb-item" onclick="showPage('orders')">
+      <span class="icon">📦</span> Orders
+    </a>
+    <a class="sb-item" onclick="showPage('products')">
+      <span class="icon">🔬</span> Products
+    </a>
+    <a class="sb-item" onclick="showPage('users')">
+      <span class="icon">👥</span> Users
+    </a>
+    <a class="sb-item" onclick="showPage('messages')">
+      <span class="icon">✉️</span> Messages <span id="msg-dot" class="dot" style="display:none"></span>
+    </a>
+    <a class="sb-item" href="/" style="margin-top:1rem;">
+      <span class="icon">🌐</span> View Website
+    </a>
+  </nav>
+  <div class="sb-footer">
+    Logged in as<br/><span id="admin-name">—</span>
+    <br/><a href="#" onclick="logout()" style="color:var(--red);font-size:.75rem;">Logout</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main id="main">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <h1 id="page-title">Dashboard</h1>
+    <span class="meta" id="topbar-meta"></span>
+  </div>
+
+  <!-- ── LOGIN PAGE ── -->
+  <div class="page active" id="page-login" style="max-width:400px;margin:6rem auto;">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold);margin-bottom:1.5rem;">Admin Login</h2>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@enactus-bsu.com"/>
+    </div>
+    <div class="form-group" style="margin-bottom:1.5rem;">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="btn btn-gold" style="width:100%;padding:.8rem;" onclick="doLogin()">Login</button>
+    <p id="login-error" style="color:var(--red);font-size:.85rem;margin-top:.8rem;display:none;"></p>
+  </div>
+
+  <!-- ── DASHBOARD PAGE ── -->
+  <div class="page" id="page-dashboard">
+    <div class="stats-grid" id="stats-grid">
+      <div class="loading">Loading stats…</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Recent Orders</h3><button class="btn btn-outline btn-sm" onclick="showPage('orders')">View All</button></div>
+      <div class="card-body"><table>
+        <thead><tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="recent-orders-body"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── ORDERS PAGE ── -->
+  <div class="page" id="page-orders">
+    <div class="filter-bar">
+      <select id="order-status-filter" onchange="loadOrders()">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="shipped">Shipped</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <input type="text" id="order-search" placeholder="Search by name or email…" oninput="filterOrdersTable()"/>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>All Orders</h3></div>
+      <div class="card-body"><table>
+        <thead><tr><th>#</th><th>Customer</th><th>Email</th><th>Phone</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody id="orders-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── PRODUCTS PAGE ── -->
+  <div class="page" id="page-products">
+    <div style="margin-bottom:1.2rem;">
+      <button class="btn btn-gold" onclick="openProductModal()">+ Add Product</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>All Products</h3></div>
+      <div class="card-body"><table>
+        <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Variants</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="products-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── USERS PAGE ── -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <div class="card-header"><h3>All Users</h3></div>
+      <div class="card-body"><table>
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="users-body"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── MESSAGES PAGE ── -->
+  <div class="page" id="page-messages">
+    <div class="card">
+      <div class="card-header"><h3>Contact Messages</h3></div>
+      <div class="card-body"><table>
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="messages-body"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</main>
+
+<!-- ── ORDER DETAIL MODAL ── -->
+<div id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Order Details</h3>
+    <div id="modal-content"></div>
+    <div class="modal-row">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<script>
+const API = '';  // same origin
+let TOKEN = localStorage.getItem('admin_token') || '';
+let currentOrders = [];
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 2800);
+}
+
+async function apiFetch(path, opts={}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const res = await fetch(API + path, { ...opts, headers: {...headers, ...opts.headers} });
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function badgeHTML(status) {
+  return `<span class="badge badge-${status}">${status}</span>`;
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email    = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const form = new URLSearchParams({ username: email, password });
+  const res = await fetch(API + '/api/auth/login', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: form
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    const el = document.getElementById('login-error');
+    el.textContent = err.detail || 'Invalid credentials'; el.style.display = 'block';
+    return;
+  }
+  const data = await res.json();
+  if (!data.user.is_admin) {
+    document.getElementById('login-error').textContent = 'Admin access required.';
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  TOKEN = data.access_token;
+  localStorage.setItem('admin_token', TOKEN);
+  document.getElementById('admin-name').textContent = data.user.name;
+  document.getElementById('page-login').classList.remove('active');
+  showPage('dashboard');
+}
+
+function logout() {
+  TOKEN = ''; localStorage.removeItem('admin_token');
+  location.reload();
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+const pageTitles = { dashboard:'Dashboard', orders:'Orders', products:'Products', users:'Users', messages:'Messages' };
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => {
+    if (i.textContent.toLowerCase().includes(name)) i.classList.add('active');
+  });
+  document.getElementById('page-title').textContent = pageTitles[name] || name;
+
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'orders')    loadOrders();
+  if (name === 'products')  loadProducts();
+  if (name === 'users')     loadUsers();
+  if (name === 'messages')  loadMessages();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const res = await apiFetch('/api/admin/dashboard');
+  if (!res || !res.ok) return;
+  const d = await res.json();
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="s-val">${d.total_orders}</div><div class="s-lbl">Total Orders</div><div class="s-icon">📦</div></div>
+    <div class="stat-card green"><div class="s-val">EGP ${Number(d.total_revenue_egp).toLocaleString()}</div><div class="s-lbl">Total Revenue</div><div class="s-icon">💰</div></div>
+    <div class="stat-card red"><div class="s-val">${d.pending_orders}</div><div class="s-lbl">Pending Orders</div><div class="s-icon">⏳</div></div>
+    <div class="stat-card blue"><div class="s-val">${d.total_users}</div><div class="s-lbl">Registered Users</div><div class="s-icon">👥</div></div>
+    <div class="stat-card"><div class="s-val">${d.total_products}</div><div class="s-lbl">Products</div><div class="s-icon">🔬</div></div>
+    <div class="stat-card red"><div class="s-val">${d.unread_messages}</div><div class="s-lbl">Unread Messages</div><div class="s-icon">✉️</div></div>
+  `;
+
+  if (d.unread_messages > 0) document.getElementById('msg-dot').style.display = 'inline-block';
+
+  const rows = d.recent_orders.map(o => `
+    <tr>
+      <td>#${o.id}</td>
+      <td>${o.customer}</td>
+      <td>EGP ${Number(o.total).toLocaleString()}</td>
+      <td>${badgeHTML(o.status)}</td>
+      <td>${fmtDate(o.date)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty">No orders yet</td></tr>';
+  document.getElementById('recent-orders-body').innerHTML = rows;
+}
+
+// ── ORDERS ───────────────────────────────────────────────────────────────────
+async function loadOrders() {
+  const status = document.getElementById('order-status-filter').value;
+  const url = status ? `/api/orders/?status=${status}` : '/api/orders/';
+  const res = await apiFetch(url);
+  if (!res || !res.ok) return;
+  currentOrders = await res.json();
+  renderOrders(currentOrders);
+}
+
+function filterOrdersTable() {
+  const q = document.getElementById('order-search').value.toLowerCase();
+  renderOrders(currentOrders.filter(o =>
+    o.customer_name.toLowerCase().includes(q) || o.customer_email.toLowerCase().includes(q)
+  ));
+}
+
+function renderOrders(orders) {
+  const rows = orders.map(o => `
+    <tr>
+      <td>#${o.id}</td>
+      <td>${o.customer_name}</td>
+      <td>${o.customer_email}</td>
+      <td>${o.customer_phone || '—'}</td>
+      <td>EGP ${Number(o.total_egp).toLocaleString()}</td>
+      <td>
+        <select class="status-select" onchange="updateStatus(${o.id}, this.value)">
+          ${['pending','confirmed','shipped','delivered','cancelled'].map(s =>
+            `<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`
+          ).join('')}
+        </select>
+      </td>
+      <td>${fmtDate(o.created_at)}</td>
+      <td style="display:flex;gap:.4rem;">
+        <button class="btn btn-blue btn-sm" onclick="viewOrder(${o.id})">View</button>
+        <button class="btn btn-red btn-sm" onclick="deleteOrder(${o.id})">Del</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty">No orders found</td></tr>';
+  document.getElementById('orders-body').innerHTML = rows;
+}
+
+async function updateStatus(id, status) {
+  const res = await apiFetch(`/api/orders/${id}/status`, {
+    method:'PATCH', body: JSON.stringify({ status })
+  });
+  if (res && res.ok) {
+    toast(`Order #${id} updated to "${status}"`);
+    loadOrders();
+  } else {
+    toast('Failed to update status', 'error');
+  }
+}
+
+async function viewOrder(id) {
+  const res = await apiFetch(`/api/orders/${id}`);
+  if (!res || !res.ok) return;
+  const o = await res.json();
+  const items = o.items.map(i => `
+    <tr><td>${i.variant_id}</td><td>${i.quantity}</td>
+        <td>EGP ${i.unit_price.toLocaleString()}</td>
+        <td>EGP ${(i.unit_price*i.quantity).toLocaleString()}</td></tr>`).join('');
+  document.getElementById('modal-title').textContent = `Order #${o.id}`;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="detail-row"><span class="lbl">Customer</span><span class="val">${o.customer_name}</span></div>
+    <div class="detail-row"><span class="lbl">Email</span><span class="val"><a href="mailto:${o.customer_email}" style="color:var(--gold)">${o.customer_email}</a></span></div>
+    <div class="detail-row"><span class="lbl">Phone</span><span class="val">${o.customer_phone||'—'}</span></div>
+    <div class="detail-row"><span class="lbl">Address</span><span class="val">${o.address||'—'}</span></div>
+    <div class="detail-row"><span class="lbl">Notes</span><span class="val">${o.notes||'—'}</span></div>
+    <div class="detail-row"><span class="lbl">Status</span><span class="val">${badgeHTML(o.status)}</span></div>
+    <div class="detail-row"><span class="lbl">Date</span><span class="val">${fmtDate(o.created_at)}</span></div>
+    <h4 style="margin:1rem 0 .5rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;">Items</h4>
+    <table><thead><tr><th>Variant ID</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+    <tbody>${items}</tbody>
+    <tfoot><tr><td colspan="3"><strong>Total</strong></td><td><strong>EGP ${Number(o.total_egp).toLocaleString()}</strong></td></tr></tfoot>
+    </table>
+    <div style="margin-top:1rem;">
+      <a href="mailto:${o.customer_email}?subject=Regarding your order %23${o.id}" class="btn btn-gold">
+        📧 Email Customer
+      </a>
+    </div>
+  `;
+  openModal();
+}
+
+async function deleteOrder(id) {
+  if (!confirm(`Delete order #${id}? This cannot be undone.`)) return;
+  const res = await apiFetch(`/api/orders/${id}`, { method:'DELETE' });
+  if (res && res.status === 204) { toast(`Order #${id} deleted`); loadOrders(); }
+  else toast('Delete failed', 'error');
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────────────────────────
+async function loadProducts() {
+  const res = await apiFetch('/api/products/');
+  if (!res || !res.ok) return;
+  const products = await res.json();
+  const rows = products.map(p => `
+    <tr>
+      <td>${p.id}</td>
+      <td>${p.name}</td>
+      <td>${p.category || '—'}</td>
+      <td>${p.variants.length} variant(s)</td>
+      <td><span class="badge ${p.is_active?'badge-confirmed':'badge-cancelled'}">${p.is_active?'Active':'Inactive'}</span></td>
+      <td style="display:flex;gap:.4rem;">
+        <button class="btn btn-outline btn-sm" onclick="toggleProduct(${p.id}, ${p.is_active})">
+          ${p.is_active?'Deactivate':'Activate'}
+        </button>
+        <button class="btn btn-red btn-sm" onclick="deleteProduct(${p.id})">Del</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">No products</td></tr>';
+  document.getElementById('products-body').innerHTML = rows;
+}
+
+async function toggleProduct(id, isActive) {
+  const res = await apiFetch(`/api/products/${id}`, {
+    method:'PATCH', body: JSON.stringify({ is_active: !isActive })
+  });
+  if (res && res.ok) { toast('Product updated'); loadProducts(); }
+  else toast('Failed', 'error');
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  const res = await apiFetch(`/api/products/${id}`, { method:'DELETE' });
+  if (res && res.status === 204) { toast('Product deleted'); loadProducts(); }
+  else toast('Delete failed', 'error');
+}
+
+function openProductModal() {
+  document.getElementById('modal-title').textContent = 'Add New Product';
+  document.getElementById('modal-content').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label>Name</label><input id="p-name" placeholder="Chitosan Powder"/></div>
+      <div class="form-group"><label>Slug</label><input id="p-slug" placeholder="chitosan-powder"/></div>
+      <div class="form-group full"><label>Description</label><textarea id="p-desc"></textarea></div>
+      <div class="form-group"><label>Category</label>
+        <select id="p-cat"><option value="powder">Powder</option><option value="capsule">Capsule</option><option value="coating">Coating</option></select>
+      </div>
+    </div>
+    <h4 style="margin:1rem 0 .5rem;font-family:'Barlow Condensed',sans-serif;">Variants</h4>
+    <div id="variants-list"></div>
+    <button class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="addVariantRow()">+ Add Variant</button>
+    <div class="modal-row">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveProduct()">Save Product</button>
+    </div>
+  `;
+  addVariantRow();
+  openModal();
+}
+
+function addVariantRow() {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:.6rem;margin-bottom:.5rem;align-items:center;';
+  div.innerHTML = `
+    <input placeholder="Label (e.g. 100g)" style="flex:2"/>
+    <input type="number" placeholder="Price EGP" style="flex:1"/>
+    <input type="number" placeholder="Stock" style="flex:1"/>
+    <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">✕</button>
+  `;
+  document.getElementById('variants-list').appendChild(div);
+}
+
+async function saveProduct() {
+  const name = document.getElementById('p-name').value.trim();
+  const slug = document.getElementById('p-slug').value.trim();
+  const variantRows = document.getElementById('variants-list').children;
+  const variants = Array.from(variantRows).map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { label: inputs[0].value, price_egp: parseFloat(inputs[1].value)||0, stock: parseInt(inputs[2].value)||0 };
+  }).filter(v => v.label);
+  const payload = {
+    name, slug,
+    description: document.getElementById('p-desc').value,
+    category: document.getElementById('p-cat').value,
+    variants
+  };
+  const res = await apiFetch('/api/products/', { method:'POST', body: JSON.stringify(payload) });
+  if (res && res.ok) { toast('Product created!'); closeModal(); loadProducts(); }
+  else { const e = await res.json(); toast(e.detail||'Error', 'error'); }
+}
+
+// ── USERS ────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const res = await apiFetch('/api/auth/users');
+  if (!res || !res.ok) return;
+  const users = await res.json();
+  const rows = users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.name}</td>
+      <td>${u.email}</td>
+      <td><span class="badge ${u.is_admin?'badge-confirmed':'badge-pending'}">${u.is_admin?'Admin':'User'}</span></td>
+      <td><span class="badge ${u.is_active?'badge-confirmed':'badge-cancelled'}">${u.is_active?'Active':'Disabled'}</span></td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td style="display:flex;gap:.4rem;">
+        <button class="btn btn-outline btn-sm" onclick="toggleUser(${u.id})">${u.is_active?'Disable':'Enable'}</button>
+        ${!u.is_admin?`<button class="btn btn-green btn-sm" onclick="makeAdmin(${u.id})">Make Admin</button>`:''}
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No users</td></tr>';
+  document.getElementById('users-body').innerHTML = rows;
+}
+
+async function toggleUser(id) {
+  const res = await apiFetch(`/api/auth/users/${id}/toggle-active`, { method:'PATCH' });
+  if (res && res.ok) { toast('User updated'); loadUsers(); }
+}
+
+async function makeAdmin(id) {
+  if (!confirm('Make this user an admin?')) return;
+  const res = await apiFetch(`/api/auth/users/${id}/make-admin`, { method:'PATCH' });
+  if (res && res.ok) { toast('User promoted to admin'); loadUsers(); }
+}
+
+// ── MESSAGES ─────────────────────────────────────────────────────────────────
+async function loadMessages() {
+  const res = await apiFetch('/api/contact/');
+  if (!res || !res.ok) return;
+  const msgs = await res.json();
+  const unread = msgs.filter(m => !m.is_read).length;
+  if (unread > 0) document.getElementById('msg-dot').style.display = 'inline-block';
+  else document.getElementById('msg-dot').style.display = 'none';
+  const rows = msgs.map(m => `
+    <tr style="${!m.is_read?'font-weight:600;':''}">
+      <td>${m.id}</td>
+      <td>${m.name}</td>
+      <td><a href="mailto:${m.email}" style="color:var(--gold)">${m.email}</a></td>
+      <td>${m.subject||'—'}</td>
+      <td>${fmtDate(m.created_at)}</td>
+      <td><span class="badge ${m.is_read?'badge-confirmed':'badge-pending'}">${m.is_read?'Read':'Unread'}</span></td>
+      <td style="display:flex;gap:.4rem;">
+        <button class="btn btn-blue btn-sm" onclick="viewMessage(${m.id})">View</button>
+        <button class="btn btn-red btn-sm" onclick="deleteMessage(${m.id})">Del</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No messages</td></tr>';
+  document.getElementById('messages-body').innerHTML = rows;
+}
+
+async function viewMessage(id) {
+  const res = await apiFetch('/api/contact/');
+  if (!res) return;
+  const msgs = await res.json();
+  const m = msgs.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('modal-title').textContent = `Message #${m.id}`;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="detail-row"><span class="lbl">From</span><span class="val">${m.name}</span></div>
+    <div class="detail-row"><span class="lbl">Email</span><span class="val"><a href="mailto:${m.email}" style="color:var(--gold)">${m.email}</a></span></div>
+    <div class="detail-row"><span class="lbl">Subject</span><span class="val">${m.subject||'—'}</span></div>
+    <div class="detail-row"><span class="lbl">Date</span><span class="val">${fmtDate(m.created_at)}</span></div>
+    <div style="margin-top:1rem;background:rgba(255,255,255,.03);padding:1rem;font-size:.9rem;line-height:1.7;color:var(--white);">${m.message}</div>
+    <div style="margin-top:1rem;">
+      <a href="mailto:${m.email}?subject=Re: ${m.subject||'Your message'}" class="btn btn-gold">📧 Reply</a>
+    </div>
+  `;
+  openModal();
+  // Mark as read
+  if (!m.is_read) {
+    await apiFetch(`/api/contact/${id}/read`, { method:'PATCH' });
+    loadMessages();
+  }
+}
+
+async function deleteMessage(id) {
+  if (!confirm('Delete this message?')) return;
+  const res = await apiFetch(`/api/contact/${id}`, { method:'DELETE' });
+  if (res && res.status === 204) { toast('Message deleted'); loadMessages(); }
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function openModal()  { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+(async () => {
+  if (!TOKEN) return; // stay on login page
+  const res = await apiFetch('/api/auth/me');
+  if (!res || !res.ok) { TOKEN=''; localStorage.removeItem('admin_token'); return; }
+  const me = await res.json();
+  if (!me.is_admin) { TOKEN=''; localStorage.removeItem('admin_token'); return; }
+  document.getElementById('admin-name').textContent = me.name;
+  document.getElementById('page-login').classList.remove('active');
+  showPage('dashboard');
+})();
+</script>
+</body>
+</html>
